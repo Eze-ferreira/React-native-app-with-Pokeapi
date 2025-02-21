@@ -1,32 +1,37 @@
-import { View, Text, Image, StyleSheet, ActivityIndicator } from "react-native";
-import { useLocalSearchParams } from "expo-router";
+import { View, Text, Image, ActivityIndicator, StyleSheet } from "react-native";
+import { useLocalSearchParams, useNavigation } from "expo-router";
 import { useEffect, useState } from "react";
 
-export default function PokemonDetails() {
-  const { id } = useLocalSearchParams();
+export default function PokemonDetail() {
+  const { id } = useLocalSearchParams(); // Obtiene el ID del Pokémon desde la URL
   const [pokemon, setPokemon] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const navigation = useNavigation();
 
   useEffect(() => {
-    fetch(`https://pokeapi.co/api/v2/pokemon/${id}`)
-      .then((response) => response.json())
-      .then((data) => {
+    const fetchPokemonDetails = async () => {
+      try {
+        const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
+        const data = await response.json();
         setPokemon(data);
-        setLoading(false);
-      })
-      .catch((error) => console.error("Error al obtener detalles:", error));
+
+        // ✅ Cambia el título de la Navbar al nombre del Pokémon
+        navigation.setOptions({ title: data.name.charAt(0).toUpperCase() + data.name.slice(1) });
+      } catch (error) {
+        console.error("Error al obtener los detalles del Pokémon:", error);
+      }
+    };
+
+    fetchPokemonDetails();
   }, [id]);
 
-  if (loading) {
+  if (!pokemon) {
     return <ActivityIndicator size="large" color="red" />;
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{pokemon.name}</Text>
       <Image source={{ uri: pokemon.sprites.front_default }} style={styles.image} />
-      <Text style={styles.info}>Altura: {pokemon.height / 10} m</Text>
-      <Text style={styles.info}>Peso: {pokemon.weight / 10} kg</Text>
+      <Text style={styles.name}>{pokemon.name}</Text>
     </View>
   );
 }
@@ -37,20 +42,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#f8f9fa",
-    padding: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    textTransform: "capitalize",
   },
   image: {
     width: 150,
     height: 150,
-    marginVertical: 20,
   },
-  info: {
-    fontSize: 18,
-    marginVertical: 5,
+  name: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginTop: 10,
+    textTransform: "capitalize",
   },
 });
